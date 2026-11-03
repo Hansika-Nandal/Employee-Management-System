@@ -1,0 +1,59 @@
+
+name: GitHub Actions CI-CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Check Application Files
+        run: |
+          test -f index.html
+          test -f style.css
+          echo "Application files found successfully"
+
+      - name: Test Application
+        run: |
+          grep -q "Employee Management System" index.html
+          echo "Application test passed"
+
+      - name: Prepare Website
+        run: |
+          mkdir -p public
+          cp index.html style.css public/
+
+      - name: Upload Website Artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: public
+
+  deploy:
+    name: Deploy Application
+    needs: build
+    runs-on: ubuntu-latest
+
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
